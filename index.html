@@ -3,110 +3,135 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>ClipJoin</title>
+<meta name="description" content="Paste, compare and join clipboard items">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png">
-<meta name="theme-color" content="#5b3df5">
+<meta name="theme-color" content="#f3f2ef" media="(prefers-color-scheme:light)">
+<meta name="theme-color" content="#0f1014" media="(prefers-color-scheme:dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <style>
-:root{--bg:#f2f1ee;--card:#fff;--ink:#17181c;--mute:#74777f;--line:#e3e1dc;--acc:#5b3df5;--accI:#fff;
---cp:#0d8f6f;--cpB:#e2f4ee;--cv:#c2570c;--cvB:#fdeee0;--dup:#b7791f;--dupB:#fbf1d9;--dn:#c93a3a;--sh:0 1px 2px rgba(20,20,30,.06),0 8px 24px -12px rgba(20,20,30,.18)}
-@media(prefers-color-scheme:dark){:root{--bg:#0e0f13;--card:#181a20;--ink:#eceef2;--mute:#8b8f99;--line:#262932;--acc:#8b74ff;--accI:#0e0f13;
---cp:#4fd6ae;--cpB:#12302a;--cv:#ffa05c;--cvB:#352214;--dup:#f2c35c;--dupB:#33290f;--dn:#ff7b7b;--sh:0 8px 24px -12px #000}}
+:root{color-scheme:light dark;--bg:#f3f2ef;--card:#fff;--ink:#17181c;--mute:#72757e;--line:#e4e2dd;--acc:#5b3df5;--on:#fff;
+--cp:#0b8a6a;--cpb:#dff3ec;--cv:#b9520c;--cvb:#fcebdb;--dup:#a56b00;--dupb:#faefd2;--dn:#c8383a;--dh:0px;
+--sh:0 1px 2px rgba(20,20,30,.05),0 10px 28px -14px rgba(20,20,30,.22)}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1014;--card:#181a21;--ink:#eceef3;--mute:#8a8e99;--line:#262932;--acc:#9380ff;--on:#0f1014;
+--cp:#52d8b0;--cpb:#12312a;--cv:#ffa562;--cvb:#37230f;--dup:#f3c65f;--dupb:#35290d;--dn:#ff7d7d;--sh:0 10px 28px -14px #000}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html{color-scheme:light dark}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100dvh}
-.app{max-width:1000px;margin:0 auto;padding:max(14px,env(safe-area-inset-top)) 14px 250px;display:grid;gap:14px}
-header{display:flex;justify-content:space-between;align-items:center;padding:4px 2px}
-h1{font-size:1.35rem;margin:0;letter-spacing:-.03em;font-weight:750}
-h1 i{font-style:normal;color:var(--acc)}
-#inst{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:99px;padding:8px 14px;font:inherit;font-size:.85rem}
-#side{display:grid;gap:12px}
-#verdict{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px;box-shadow:var(--sh);display:flex;gap:12px;align-items:center}
-#verdict b{display:block;font-size:.98rem}#verdict small{color:var(--mute)}
-#dot{width:12px;height:12px;border-radius:50%;background:var(--line);flex:none}
+button,textarea{font:inherit;color:inherit}
+.app{max-width:1000px;margin:0 auto;padding:max(12px,env(safe-area-inset-top)) 14px calc(var(--dh) + 20px);display:grid;gap:12px}
+header{display:flex;align-items:center;justify-content:space-between;padding:2px}
+h1{margin:0;font-size:1.3rem;font-weight:780;letter-spacing:-.03em}h1 i{font-style:normal;color:var(--acc)}
+#inst{border:1px solid var(--line);background:var(--card);border-radius:99px;padding:8px 14px;font-size:.85rem;cursor:pointer}
+#side{display:grid;gap:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:var(--sh)}
+#verdict{display:flex;gap:12px;align-items:center;padding:12px 14px}
+#dot{width:12px;height:12px;border-radius:50%;background:var(--line);flex:none;transition:background .2s}
 #verdict.same #dot{background:var(--dup)}#verdict.diff #dot{background:var(--cp)}
-.tg{display:flex;gap:8px}
-.chip{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;border:1px solid var(--line);background:var(--card);color:var(--mute);border-radius:12px;font:inherit;font-size:.9rem;cursor:pointer}
-.chip::before{content:"";width:16px;height:16px;border-radius:5px;border:2px solid var(--mute)}
+#v1{display:block;font-weight:650}#v2{color:var(--mute);font-size:.85rem}
+.tg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.chip{display:flex;align-items:center;justify-content:center;gap:9px;min-height:46px;border:1px solid var(--line);background:var(--card);color:var(--mute);border-radius:14px;cursor:pointer}
+.chip::before{content:"";width:18px;height:18px;border-radius:6px;border:2px solid var(--mute);transition:.15s}
 .chip[aria-pressed=true]{color:var(--ink);border-color:var(--acc)}
-.chip[aria-pressed=true]::before{background:var(--acc) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-7' fill='none' stroke='white' stroke-width='2.2'/%3E%3C/svg%3E") center/cover;border-color:var(--acc)}
-#pz{width:100%;height:60px;resize:none;border:2px dashed var(--line);border-radius:16px;background:var(--card);color:var(--ink);padding:10px 14px;font:inherit;outline:0}
+.chip[aria-pressed=true]::before{border-color:var(--acc);background:var(--acc) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-7' fill='none' stroke='white' stroke-width='2.4'/%3E%3C/svg%3E") center/cover}
+#pz{display:block;width:100%;height:56px;resize:none;border:2px dashed var(--line);border-radius:14px;background:var(--card);padding:12px 14px;outline:0}
 #pz:focus{border-color:var(--acc)}
-.pv{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--sh);overflow:hidden}
-.pv header{padding:10px 14px 0}.pv span{font-size:.8rem;color:var(--mute)}
-#out{display:block;width:100%;height:112px;border:0;resize:none;background:transparent;color:var(--ink);padding:8px 14px 12px;font:.92rem/1.5 ui-monospace,"Cascadia Code",Consolas,monospace;outline:0}
-#dock{position:fixed;left:0;right:0;bottom:0;padding:12px 12px max(12px,env(safe-area-inset-bottom));background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(14px);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:1000px;margin:0 auto}
-.b{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:68px;padding:8px 4px;border-radius:16px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;cursor:pointer;transition:transform .08s,background .15s}
-.b:active{transform:scale(.96)}
+.pv{overflow:hidden}.pv>span{display:block;padding:10px 14px 0;font-size:.78rem;color:var(--mute)}
+#out{display:block;width:100%;height:104px;border:0;resize:none;background:none;outline:0;padding:6px 14px 12px;font:.9rem/1.5 ui-monospace,"Cascadia Code",Consolas,monospace}
+#dock{position:fixed;inset:auto 0 0 0;max-width:1000px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px 12px max(12px,env(safe-area-inset-bottom));background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(16px);border-top:1px solid var(--line);z-index:4}
+.b{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-height:66px;padding:8px 4px;border-radius:16px;border:1px solid var(--line);background:var(--card);cursor:pointer;transition:transform .08s,box-shadow .15s}
+.b:active{transform:scale(.95)}
 .b svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.b strong{font-size:.9rem;font-weight:650}.b em{font-style:normal;font-size:.68rem;opacity:.72}
-.b.p{background:var(--acc);border-color:var(--acc);color:var(--accI)}
-.b.c{background:var(--cpB);border-color:transparent;color:var(--cp)}
-.b.v{background:var(--cvB);border-color:transparent;color:var(--cv)}
+.b strong{font-size:.88rem;font-weight:680}.b em{font-style:normal;font-size:.68rem;opacity:.75}
+.b.p{background:var(--acc);border-color:var(--acc);color:var(--on)}
+.b.c{background:var(--cpb);border-color:transparent;color:var(--cp)}
+.b.v{background:var(--cvb);border-color:transparent;color:var(--cv)}
 .b.x{color:var(--dn)}
-.b.ok{outline:3px solid var(--cp);outline-offset:-3px}
-.b:focus-visible,.chip:focus-visible,#inst:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.b.ok{box-shadow:inset 0 0 0 3px var(--cp)}
+.sort{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.sort[hidden]{display:none}
+.seg{display:flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card)}
+.seg button{border:0;background:none;padding:0 16px;min-height:42px;color:var(--mute);cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--acc);color:var(--on);font-weight:650}
+.sbtn{display:flex;align-items:center;gap:6px;min-height:42px;padding:0 14px;border:1px solid var(--line);background:var(--card);color:var(--mute);border-radius:12px;cursor:pointer}
+.sbtn[aria-pressed=true]{color:var(--ink);border-color:var(--acc)}
+.sbtn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+#sinfo{margin-left:auto;color:var(--mute);font-size:.78rem}
+:is(.b,.chip,#inst,li button,.seg button,.sbtn):focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 ul{list-style:none;margin:0;padding:0;display:grid;gap:8px;align-content:start}
-li{display:flex;gap:10px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 6px 10px 14px;box-shadow:var(--sh)}
-li .n{color:var(--mute);font-size:.8rem;min-width:1.6em}
-li .t{flex:1;min-width:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
-li.dup .t{opacity:.5}li.dup.on .t{text-decoration:line-through}
-.tag{font-size:.7rem;background:var(--dupB);color:var(--dup);border-radius:99px;padding:2px 8px;white-space:nowrap}
-.m{display:block;color:var(--mute);font-size:.74rem}
-li button{width:44px;height:44px;border:0;background:none;color:var(--mute);font-size:1.1rem;border-radius:12px;cursor:pointer}
+li{display:flex;align-items:center;gap:10px;padding:8px 4px 8px 14px;border-radius:14px}
+li .n{color:var(--mute);font-size:.8rem;min-width:1.5em}
+li .t{flex:1;min-width:0}
+li .x{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+li .m{display:block;color:var(--mute);font-size:.74rem}
+li.dup .x{opacity:.55}li.dup.skip .x{text-decoration:line-through}
+li.last{border-color:var(--acc)}
+.tag{font-size:.7rem;background:var(--dupb);color:var(--dup);border-radius:99px;padding:2px 9px;white-space:nowrap}
+li button{width:44px;height:44px;border:0;background:none;color:var(--mute);font-size:1.05rem;border-radius:12px;cursor:pointer}
 li button:hover{background:var(--bg);color:var(--dn)}
-#empty{text-align:center;color:var(--mute);padding:36px 12px;border:2px dashed var(--line);border-radius:16px}
-#toast{position:fixed;left:50%;bottom:calc(240px + env(safe-area-inset-bottom));transform:translate(-50%,10px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:99px;opacity:0;pointer-events:none;transition:.2s;display:flex;gap:12px;align-items:center;z-index:5;white-space:nowrap}
+#empty{text-align:center;color:var(--mute);padding:34px 12px;border:2px dashed var(--line);border-radius:18px}
+#toast{position:fixed;left:50%;bottom:calc(var(--dh) + 14px);transform:translate(-50%,8px);display:flex;gap:14px;align-items:center;background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:99px;opacity:0;pointer-events:none;transition:.18s;z-index:6;max-width:92vw;white-space:nowrap}
 #toast.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
-#toast button{background:none;border:0;color:var(--acc);font:inherit;font-weight:700;cursor:pointer;padding:0}
+#tm{overflow:hidden;text-overflow:ellipsis}
+#tu{background:none;border:0;color:var(--acc);font-weight:700;cursor:pointer;padding:0}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 @media(min-width:880px){
- .app{padding-bottom:32px;grid-template-columns:1fr 400px;align-items:start}
+ .app{grid-template-columns:1fr 410px;align-items:start;padding-bottom:32px;gap:16px}
  header{grid-column:1/-1}
- #side{grid-column:2;grid-row:2;position:sticky;top:16px}
+ #side{grid-column:2;position:sticky;top:16px}
  #listwrap{grid-column:1;grid-row:2}
- #dock{position:static;padding:0;background:none;border:0;backdrop-filter:none;gap:10px}
- .b{min-height:76px}.b:hover{filter:brightness(.97)}
- #toast{bottom:28px}
+ #dock{position:static;padding:0;background:none;border:0;backdrop-filter:none;gap:10px;margin:0}
+ .b{min-height:78px}.b:hover{filter:brightness(.96)}
+ #out{height:150px}
+ :root{--dh:0px!important}
+ #toast{bottom:26px}
 }
 </style></head><body>
-<svg width="0" height="0" style="position:absolute"><defs>
-<symbol id="paste" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2.5"/><path d="M9 4.5h6V7H9z"/></symbol>
-<symbol id="lines" viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h14"/></symbol>
-<symbol id="link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></symbol>
-<symbol id="trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></symbol>
-<symbol id="split" viewBox="0 0 24 24"><path d="M12 3v6m0 0l-6 6m6-6l6 6M6 15v6M18 15v6"/></symbol>
-<symbol id="join" viewBox="0 0 24 24"><path d="M6 3v6l6 6m6-12v6l-6 6m0 0v6"/></symbol>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-paste" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2.5"/><path d="M9 4.5h6V7H9z"/></symbol>
+<symbol id="i-lines" viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h14"/></symbol>
+<symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></symbol>
+<symbol id="i-split" viewBox="0 0 24 24"><path d="M12 3v6m0 0l-6 6m6-6l6 6M6 15v6M18 15v6"/></symbol>
+<symbol id="i-sort" viewBox="0 0 24 24"><path d="M8 4v16m0 0l-3.5-3.5M8 20l3.5-3.5M16 20V4m0 0l-3.5 3.5M16 4l3.5 3.5"/></symbol>
+<symbol id="i-join" viewBox="0 0 24 24"><path d="M6 3v6l6 6m6-12v6l-6 6m0 0v6"/></symbol>
 </defs></svg>
 <div class="app">
 <header><h1>Clip<i>Join</i></h1><button id="inst" hidden>Install app</button></header>
-
 <section id="side">
- <div id="verdict"><span id="dot"></span><div><b id="v1">Paste something</b><small id="v2">Ctrl+V works anywhere</small></div></div>
+ <div id="verdict" class="card"><span id="dot"></span><div><b id="v1">Paste something</b><span id="v2"></span></div></div>
  <div class="tg"><button class="chip" id="o-uniq" aria-pressed="true">Skip duplicates</button><button class="chip" id="o-auto" aria-pressed="false">Auto-add copies</button></div>
  <textarea id="pz" rows="2" aria-label="Paste box" placeholder="Or tap &amp; hold here → Paste" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
- <div class="pv"><header><span id="pl">Lines</span></header><textarea id="out" readonly aria-label="Result" placeholder="Result appears here"></textarea></div>
- <nav id="dock">
-  <button class="b p" id="paste"><svg><use href="#paste"/></svg><strong>Paste</strong><em>from clipboard</em></button>
-  <button class="b c" id="c1"><svg><use href="#lines"/></svg><strong>Copy lines</strong><em>one per line</em></button>
-  <button class="b c" id="c2"><svg><use href="#link"/></svg><strong>Copy chain</strong><em>with spaces</em></button>
-  <button class="b x" id="clear"><svg><use href="#trash"/></svg><strong>Clear</strong><em>remove all</em></button>
-  <button class="b v" id="c5"><svg><use href="#split"/></svg><strong>Split</strong><em>chain → lines</em></button>
-  <button class="b v" id="c6"><svg><use href="#join"/></svg><strong>Join</strong><em>lines → chain</em></button>
+ <div class="pv card"><span id="pl"></span><textarea id="out" readonly aria-label="Result" placeholder="Your result appears here"></textarea></div>
+ <nav id="dock" aria-label="Actions">
+  <button class="b p" id="paste"><svg><use href="#i-paste"/></svg><strong>Paste</strong><em>from clipboard</em></button>
+  <button class="b c" id="c1"><svg><use href="#i-lines"/></svg><strong>Copy lines</strong><em>one per line</em></button>
+  <button class="b c" id="c2"><svg><use href="#i-link"/></svg><strong>Copy chain</strong><em>with spaces</em></button>
+  <button class="b x" id="clear"><svg><use href="#i-trash"/></svg><strong>Clear</strong><em>remove all</em></button>
+  <button class="b v" id="c5"><svg><use href="#i-split"/></svg><strong>Split</strong><em>chain → lines</em></button>
+  <button class="b v" id="c6"><svg><use href="#i-join"/></svg><strong>Join</strong><em>lines → chain</em></button>
  </nav>
 </section>
-
-<section id="listwrap"><ul id="list"></ul><div id="empty">Nothing yet.<br>Tap <b>Paste</b> to add your first item.</div></section>
+<section id="listwrap">
+ <div class="sort" id="sortbar" hidden>
+  <div class="seg" role="group" aria-label="Sort by"><button id="s-time" aria-pressed="true">Time</button><button id="s-name" aria-pressed="false">Name</button></div>
+  <button class="sbtn" id="rev" aria-pressed="false"><svg><use href="#i-sort"/></svg>Reverse</button>
+  <span id="sinfo"></span>
+ </div>
+ <ul id="list"></ul><div id="empty">Nothing yet.<br>Tap <b>Paste</b> or press <b>Ctrl+V</b>.</div></section>
 </div>
-<div id="toast" role="status"><span id="tm"></span><button id="tu" hidden>Undo</button></div>
+<div id="toast" role="status" aria-live="polite"><span id="tm"></span><button id="tu" hidden>Undo</button></div>
 <script>
-const $=id=>document.getElementById(id);
-let S;try{S=JSON.parse(localStorage.clipjoin)}catch(e){}
-S=Object.assign({items:[],uniq:true,auto:false,view:'lines'},S||{});
-let lastClip=null,undoItems=null;
-const save=()=>{try{localStorage.clipjoin=JSON.stringify({items:S.items,uniq:S.uniq,auto:S.auto,view:S.view})}catch(e){}};
-const uniq=a=>S.uniq?[...new Set(a)]:a;
+'use strict';
+const $=id=>document.getElementById(id),KEY='clipjoin';
+const S={items:[],uniq:true,auto:false,view:'lines',sort:'time',rev:false};
+try{const o=JSON.parse(localStorage.getItem(KEY)||'{}');if(Array.isArray(o.items))S.items=o.items.filter(x=>x&&typeof x.t==='string');
+ for(const k of['uniq','auto','rev'])if(typeof o[k]==='boolean')S[k]=o[k];if(o.view in{lines:1,chain:1,split:1,join:1})S.view=o.view;if(o.sort==='name'||o.sort==='time')S.sort=o.sort}catch(e){}
+let lastClip=null,saveT;
+const flush=()=>{clearTimeout(saveT);try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}},save=()=>{clearTimeout(saveT);saveT=setTimeout(flush,150)};
+addEventListener('pagehide',flush);document.addEventListener('visibilitychange',()=>{if(document.hidden)flush()});
 
-// split on spaces, but keep "double" and 'single' quoted parts together
+/* split on spaces, but keep "double" and 'single' quoted parts together */
 function tokens(s){
   const out=[],n=s.length,ws=/\s/;let i=0;
   while(i<n){
@@ -122,7 +147,15 @@ function tokens(s){
   }
   return out;
 }
-const texts=()=>S.items.map(x=>x.t);
+const col=new Intl.Collator(undefined,{numeric:true,sensitivity:'base'});
+/* sorted view of the list: [{it,i}] where i = original paste position */
+function ordered(){
+  const a=S.items.map((it,i)=>({it,i}));
+  if(S.sort==='name')a.sort((x,y)=>col.compare(x.it.t,y.it.t)||x.i-y.i);
+  else a.sort((x,y)=>x.it.at-y.it.at||x.i-y.i);
+  return S.rev?a.reverse():a;
+}
+const texts=()=>ordered().map(o=>o.it.t),uniq=a=>S.uniq?[...new Set(a)]:a;
 const build={
   lines:()=>uniq(texts()).join('\n'),
   chain:()=>uniq(texts()).map(t=>t.replace(/\s*\r?\n\s*/g,' ')).join(' '),
@@ -131,75 +164,105 @@ const build={
 };
 const names={lines:'Lines · one per line',chain:'Chain · joined with spaces',split:'Split · chain broken into lines',join:'Join · lines made into one chain'};
 
-function toast(m,undo){$('tm').textContent=m;$('tu').hidden=!undo;$('tu').onclick=undo||null;const e=$('toast');e.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>e.classList.remove('on'),undo?4500:1500)}
+let toastT;
+function toast(m,undo){$('tm').textContent=m;$('tu').hidden=!undo;$('tu').onclick=()=>{$('toast').classList.remove('on');undo&&undo()};
+ $('toast').classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>$('toast').classList.remove('on'),undo?4500:1600)}
 const ago=ms=>{const s=Math.round(ms/1000);return s<60?s+' s':s<3600?Math.round(s/60)+' min':Math.round(s/3600)+' h'};
+const fmt=t=>new Date(t).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
 
 function add(raw){
   if(!raw||!raw.trim())return false;
-  S.items.push({t:raw.trim(),at:Date.now()});S.view=S.view;render();return true;
+  S.items.push({t:raw.trim(),at:Date.now()});render();return true;
 }
+function setItems(a){S.items=a;render()}
+
 function render(){
-  const first=new Map(),dupOf=S.items.map((it,i)=>{if(first.has(it.t))return first.get(it.t);first.set(it.t,i);return -1});
-  const L=$('list');L.innerHTML='';
-  S.items.forEach((it,i)=>{
-    const li=document.createElement('li'),d=dupOf[i]>=0;
-    li.className=(d?'dup':'')+(d&&S.uniq?' on':'');
-    li.innerHTML='<span class="n">'+(i+1)+'</span><div class="t"><span class="x"></span><span class="m"></span></div>'+(d?'<span class="tag"></span>':'')+'<button aria-label="Remove item">✕</button>';
+  const first=new Map(),frag=document.createDocumentFragment(),n=S.items.length;
+  const dupOf=S.items.map((it,i)=>{const f=first.get(it.t);if(f===undefined){first.set(it.t,i);return -1}return f});
+  ordered().forEach(({it,i})=>{
+    const f=dupOf[i],d=f>=0;
+    const li=document.createElement('li');
+    li.className='card'+(d?' dup':'')+(d&&S.uniq?' skip':'')+(i===n-1?' last':'');
+    const lc=it.t.split('\n').length;
+    li.innerHTML='<span class="n"></span><div class="t"><span class="x"></span><span class="m"></span></div>'+(d?'<span class="tag"></span>':'')+'<button data-i="'+i+'" aria-label="Remove item '+(i+1)+'">✕</button>';
+    li.children[0].textContent=i+1;
     li.querySelector('.x').textContent=it.t;
-    li.querySelector('.m').textContent=new Date(it.at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-    if(d)li.querySelector('.tag').textContent='same as #'+(dupOf[i]+1);
-    li.querySelector('button').onclick=()=>{const old=S.items.slice();S.items.splice(i,1);render();toast('Removed',()=>{S.items=old;render()})};
-    L.appendChild(li);
+    li.querySelector('.m').textContent=fmt(it.at)+(lc>1?' · '+lc+' lines':'');
+    if(d)li.querySelector('.tag').textContent='same as #'+(f+1);
+    frag.appendChild(li);
   });
-  $('empty').hidden=S.items.length>0;
-  const n=S.items.length,v=$('verdict');
+  $('list').replaceChildren(frag);
+  $('empty').hidden=n>0;
+  $('sortbar').hidden=n<2;
+  $('s-time').setAttribute('aria-pressed',S.sort==='time');$('s-name').setAttribute('aria-pressed',S.sort==='name');
+  $('rev').setAttribute('aria-pressed',S.rev);
+  $('sinfo').textContent=S.sort==='name'?(S.rev?'Z → A':'A → Z'):(S.rev?'Newest first':'Oldest first');
+  const v=$('verdict');
   if(n>=2){
     const a=S.items[n-2],b=S.items[n-1],same=a.t===b.t;
-    v.className=same?'same':'diff';
+    v.className='card '+(same?'same':'diff');
     $('v1').textContent=same?'Same as the previous paste':'Different from the previous paste';
     $('v2').textContent=ago(b.at-a.at)+' apart · '+new Set(texts()).size+' unique of '+n;
-  }else{v.className='';$('v1').textContent=n?'Paste one more to compare':'Paste something';$('v2').textContent=n?'1 item':'Ctrl+V works anywhere'}
+  }else{v.className='card';$('v1').textContent=n?'Paste one more to compare':'Paste something';$('v2').textContent=n?'1 item':'Tap Paste or press Ctrl+V'}
   $('out').value=build[S.view]();$('pl').textContent=names[S.view];
   $('o-uniq').setAttribute('aria-pressed',S.uniq);$('o-auto').setAttribute('aria-pressed',S.auto);
   save();
 }
-async function readClip(){try{return await navigator.clipboard.readText()}catch(e){return null}}
+$('list').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-i]');if(!b)return;
+  const old=S.items.slice();setItems(old.filter((_,i)=>i!==+b.dataset.i));toast('Removed',()=>setItems(old));
+});
+
+/* ---- paste: direct clipboard read (same method as the working v4); fallback = paste box ---- */
 const pz=$('pz');
-function showPZ(){pz.focus();toast('Tap & hold in the box → Paste')}
-// text pasted into the box (long-press menu, keyboard clipboard, Ctrl+V) becomes an item
+async function readClip(){
+  const cb=navigator.clipboard;if(!cb)return null;
+  try{if(cb.readText)return await cb.readText()}catch(e){}
+  try{ /* second method: read() (Firefox/Safari/others) */
+    if(cb.read){for(const it of await cb.read())if(it.types.includes('text/plain'))return await(await it.getType('text/plain')).text();return ''}
+  }catch(e){}
+  return null;
+}
+function flash(b){b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),700);navigator.vibrate&&navigator.vibrate(12)}
+$('paste').onclick=async()=>{
+  const t=await readClip();
+  if(t===null)return toast('Clipboard blocked — set Clipboard to Allow in site settings');
+  lastClip=t;add(t)?flash($('paste')):toast('Clipboard is empty or not text');
+};
 function takePZ(){const t=pz.value;pz.value='';if(t.trim()){lastClip=t;add(t);flash($('paste'))}}
 pz.addEventListener('paste',()=>setTimeout(takePZ,0));
 pz.addEventListener('input',e=>{if(/^insertFromPaste/.test(e.inputType||'')||(e.data&&e.data.length>1&&!e.isComposing))takePZ()});
-$('paste').onclick=async()=>{
-  const t=await readClip();
-  if(t===null)return showPZ();
-  lastClip=t;if(!add(t))toast('Clipboard is empty');else flash($('paste'));
-};
 addEventListener('paste',e=>{if(e.target===pz)return;const t=e.clipboardData&&e.clipboardData.getData('text');if(t){e.preventDefault();lastClip=t;add(t)}});
 
-function flash(b){b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),700);if(navigator.vibrate)navigator.vibrate(12)}
+/* ---- copy ---- */
 async function copy(view,btn){
   S.view=view;render();const v=$('out').value;
-  if(!v)return toast('Nothing to copy');
-  try{await navigator.clipboard.writeText(v)}catch(e){$('out').select();document.execCommand('copy')}
+  if(!v)return toast('Nothing to copy yet');
+  try{await navigator.clipboard.writeText(v)}catch(e){const o=$('out');o.focus();o.select();o.setSelectionRange(0,v.length);try{document.execCommand('copy')}catch(_){}}
   lastClip=v;flash(btn);toast('Copied · '+names[view].split(' · ')[0]);
 }
-$('c1').onclick=e=>copy('lines',e.currentTarget);
-$('c2').onclick=e=>copy('chain',e.currentTarget);
-$('c5').onclick=e=>copy('split',e.currentTarget);
-$('c6').onclick=e=>copy('join',e.currentTarget);
-$('clear').onclick=()=>{if(!S.items.length)return;const old=S.items.slice();S.items=[];render();toast('Cleared',()=>{S.items=old;render()})};
+for(const[id,v]of[['c1','lines'],['c2','chain'],['c5','split'],['c6','join']])$(id).onclick=e=>copy(v,e.currentTarget);
+$('clear').onclick=()=>{if(!S.items.length)return;const old=S.items.slice();setItems([]);toast('Cleared',()=>setItems(old))};
 $('o-uniq').onclick=()=>{S.uniq=!S.uniq;render()};
 $('o-auto').onclick=()=>{S.auto=!S.auto;render();watch()};
+$('s-time').onclick=()=>{S.sort='time';render()};
+$('s-name').onclick=()=>{S.sort='name';render()};
+$('rev').onclick=()=>{S.rev=!S.rev;render()};
 
-// Auto-add: while the app is open, a newly copied clipboard text is added when it differs from the last one
+/* ---- auto-add: new clipboard text is added while the app is open and focused ---- */
 let timer;
 async function poll(){if(!S.auto||document.hidden||!document.hasFocus())return;const t=await readClip();if(t&&t!==lastClip){lastClip=t;add(t)}}
 function watch(){clearInterval(timer);if(S.auto){readClip().then(t=>{if(t!==null)lastClip=t});timer=setInterval(poll,1000)}}
 addEventListener('focus',poll);document.addEventListener('visibilitychange',poll);
 
+/* ---- layout: keep list & toast clear of the fixed dock ---- */
+const dock=$('dock'),setDh=()=>document.documentElement.style.setProperty('--dh',(getComputedStyle(dock).position==='fixed'?dock.offsetHeight:0)+'px');
+new ResizeObserver(setDh).observe(dock);addEventListener('resize',setDh);
+
+/* ---- install & offline ---- */
 let dp;addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;$('inst').hidden=false});
 $('inst').onclick=async()=>{if(dp){dp.prompt();await dp.userChoice;dp=null;$('inst').hidden=true}};
-if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js'));
-render();watch();
+addEventListener('appinstalled',()=>{$('inst').hidden=true});
+if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+render();watch();setDh();
 </script></body></html>
