@@ -29,6 +29,7 @@ h1 i{font-style:normal;color:var(--acc)}
 .chip::before{content:"";width:16px;height:16px;border-radius:5px;border:2px solid var(--mute)}
 .chip[aria-pressed=true]{color:var(--ink);border-color:var(--acc)}
 .chip[aria-pressed=true]::before{background:var(--acc) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-7' fill='none' stroke='white' stroke-width='2.2'/%3E%3C/svg%3E") center/cover;border-color:var(--acc)}
+#pz{width:100%;height:84px;resize:none;border:2px dashed var(--acc);border-radius:16px;background:var(--card);color:var(--ink);padding:12px 14px;font:inherit;outline:0}
 .pv{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--sh);overflow:hidden}
 .pv header{padding:10px 14px 0}.pv span{font-size:.8rem;color:var(--mute)}
 #out{display:block;width:100%;height:112px;border:0;resize:none;background:transparent;color:var(--ink);padding:8px 14px 12px;font:.92rem/1.5 ui-monospace,"Cascadia Code",Consolas,monospace;outline:0}
@@ -81,6 +82,7 @@ li button:hover{background:var(--bg);color:var(--dn)}
 <section id="side">
  <div id="verdict"><span id="dot"></span><div><b id="v1">Paste something</b><small id="v2">Ctrl+V works anywhere</small></div></div>
  <div class="tg"><button class="chip" id="o-uniq" aria-pressed="true">Skip duplicates</button><button class="chip" id="o-auto" aria-pressed="false">Auto-add copies</button></div>
+ <textarea id="pz" hidden aria-label="Paste here" placeholder="Long-press here, then tap Paste"></textarea>
  <div class="pv"><header><span id="pl">Lines</span></header><textarea id="out" readonly aria-label="Result" placeholder="Result appears here"></textarea></div>
  <nav id="dock">
   <button class="b p" id="paste"><svg><use href="#paste"/></svg><strong>Paste</strong><em>from clipboard</em></button>
@@ -160,13 +162,21 @@ function render(){
   $('o-uniq').setAttribute('aria-pressed',S.uniq);$('o-auto').setAttribute('aria-pressed',S.auto);
   save();
 }
-async function readClip(){try{return await navigator.clipboard.readText()}catch(e){return null}}
+async function readClip(){
+  if(!navigator.clipboard||!navigator.clipboard.readText)return null;
+  try{return await Promise.race([navigator.clipboard.readText(),new Promise((_,r)=>setTimeout(r,4000))])}catch(e){return null}
+}
+const pz=$('pz');
+function showPZ(){pz.hidden=false;pz.value='';pz.focus();toast('Long-press the box and tap Paste')}
+function hidePZ(){pz.hidden=true;pz.value=''}
+pz.addEventListener('input',()=>{const t=pz.value;if(t.trim()){lastClip=t;add(t);hidePZ()}});
+pz.addEventListener('blur',()=>setTimeout(()=>{if(!pz.value)hidePZ()},300));
 $('paste').onclick=async()=>{
   const t=await readClip();
-  if(t===null)return toast('Allow clipboard access, or press Ctrl+V');
+  if(t===null)return showPZ();
   lastClip=t;if(!add(t))toast('Clipboard is empty');else flash($('paste'));
 };
-addEventListener('paste',e=>{const t=e.clipboardData&&e.clipboardData.getData('text');if(t){e.preventDefault();lastClip=t;add(t)}});
+addEventListener('paste',e=>{const t=e.clipboardData&&e.clipboardData.getData('text');if(t){e.preventDefault();lastClip=t;add(t);hidePZ()}});
 
 function flash(b){b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),700);if(navigator.vibrate)navigator.vibrate(12)}
 async function copy(view,btn){
